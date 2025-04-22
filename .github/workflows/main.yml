@@ -1,29 +1,32 @@
-name: Deploy to GitHub Pages
+name: Localhost Test in CI
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
-  deploy:
+  test-locally:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v2
+      - name: Install Node.js
+        uses: actions/setup-node@v3
         with:
-          path: .
+          node-version: '18'
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+      - name: Install http-server
+        run: npm install -g http-server
+
+      - name: Start local server in background
+        run: |
+          http-server -p 8080 &
+          sleep 5 # Give server time to start
+
+      - name: Run Lighthouse test
+        run: npx -y lighthouse http://localhost:8080 --quiet --chrome-flags="--headless"
+
+      # Optional: Kill the server if needed

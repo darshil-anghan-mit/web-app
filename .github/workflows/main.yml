@@ -1,32 +1,23 @@
-name: Localhost Test in CI
+name: Upload Website
 
 on:
   push:
     branches:
-      - main
+    - main
 
 jobs:
-  test-locally:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v1
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
-      - name: Install http-server
-        run: npm install -g http-server
-
-      - name: Start local server in background
-        run: |
-          http-server -p 8080 &
-          sleep 5 # Give server time to start
-
-      - name: Run Lighthouse test
-        run: npx -y lighthouse http://localhost:8080 --quiet --chrome-flags="--headless"
-
-      # Optional: Kill the server if needed
+    - name: Deploy static site to S3 bucket
+      run: aws s3 sync . s3://tws-github-actions-demo --delete
